@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
+media/cProfiling/
+ST-GCN/saved_models/
+ST-GCN/temp/stgcn/
+
 # C extensions
 *.so
 
