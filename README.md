@@ -47,7 +47,7 @@ The Euclidean distance between each pair of pedestrians in the image is calculat
 
 Full scale demonstration         |  Simple demonstration
 :-------------------------:|:-------------------------:
-![AI vs AI gif](media/agent.gif)  |  ![Player vs AI gif](media/player.gif)
+![Demonstration: 1](media/demo.gif)  |  ![Demonstration: 2](media/demo1.gif)
 
 
 ### **Installation**
