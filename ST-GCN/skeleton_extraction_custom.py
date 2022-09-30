@@ -252,13 +252,12 @@ def get_file_ids(file, query):
 
 
 def data_gen(args, pose_estimator, out_path, benchmark, part):
-
-    training_subjects = [0]
-    training_cameras = [0, 1, 2]
-
     # subject_ids : {0: xbot, 1: name, 2: name, 3: name, ...}
     # camera_ids : {0: front, 1: right, 2: back, 3: left}
     # action_ids : {0: Walking, 1: Jogging, 2: Running, 3: sitting, 4: skateboarding, 5: standing}
+
+    training_subjects = [0]
+    training_cameras = [0, 1, 2]
 
     sample_names = []
     sample_labels = []

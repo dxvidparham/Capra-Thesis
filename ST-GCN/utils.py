@@ -1,6 +1,9 @@
 import contextlib
+import sys
 import cv2
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
+import networkx as nx
 
 old_pose = {}
 
@@ -16,7 +19,7 @@ def get_keypoint_values(pose):
     # Prevents gaze direction from using (-1 values if keypoint not detected)
     # Instead last observed keypoint value will be used
     if -1 in r_ear:
-        r_ear = old_pose["r_ear"]
+        r_ear = [120, 132]
     else:
         old_pose["r_ear"] = r_ear
 
@@ -82,3 +85,23 @@ def gaze_direction(img, pose):
     p1 = int(img_points[0][0]), int(img_points[0][1])
     p2 = int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1])
     cv2.line(img, p1, p2, (255, 0, 0), 2)
+
+
+def get_text_size(id):
+    return (
+        cv2.getTextSize(f"Person ID: {id}", cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0][0] // 2
+    )
+
+
+def print_distances(centroid_dict):
+    centroid_mat = np.array(list(centroid_dict.values()))
+    proximity_measurement = squareform(pdist(centroid_mat))
+    G = nx.from_numpy_matrix(proximity_measurement)
+
+    for edge in list(G.edges()):
+        distance = G.get_edge_data(*edge).get("weight")
+        distance = distance
+        print(
+            f"Distance between Person {edge[0]} and Person {edge[1]} is {distance:.2f} cm"
+        )
+    print("")

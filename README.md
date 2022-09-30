@@ -17,6 +17,9 @@ This project was a joint cooperation between [Capra Robotics ApS](https://capra.
 ### **Acknowledgments**
 The provided source course is based on the [OpenDR Project](https://github.com/opendr-eu/opendr), however it only contains the necessary code for the end-end-solution.
 
+### **Prerequisites**
+It's necessary to follow the [installation guidelines](https://github.com/opendr-eu/opendr/blob/master/docs/reference/installation.md) of the OpenDR project, to work properly.
+
 ### **End-to-end solution**
 The proposed solution consists of two deep neural network models (OpenPose (lightweight) and ST-GCN) and two additional algorithms for head pose estimation and proximity measurement.
 As illustrated in the figure below.
@@ -25,32 +28,26 @@ As illustrated in the figure below.
 
 
 ### **Methods explained**
+In the following short explanations are given, about the workings of the indidvidual components of the end-to-end solution. Please refer to file xxx for a full explanation.
 
 #### **Human Pose Estimation**
+The human posture estimation model uses a CNN as a feature extractor and then computes headmaps of the body joints and their partial affinity fields to find out which keypoints belong to the same skeleton. Then, a greedy algorithm is used to assign all keypoints to the "correct" skeletet.
 
 #### **Action Recognition**
+The model takes skeletal data, provided by the OpenPose model, as input and tries to find a spatial and temporal correlation between the keypoints (body joint) when actions are performed.
 
 #### **Head Pose Estimation**
+When estimating the head pose, a certain number of keypoints are used as reference points (in this case 5) in 2D and 3D space. Using these values, with some linear algebra it becomes possible to determine the necessary rotation and translation vectors to create an approximation of the 2D points in 3D space.
 
 #### **Proximity measurement**
+The Euclidean distance between each pair of pedestrians in the image is calculated based on the centroids of their skeletons estimated by using simple trigonometry among the following three key points (neck, left hip, and right hip).
 
-### **Output**
 
-#### **Visual Results**
+#### **Demonstration**
 
-True Positives          |  False Positives
+Full scale demonstration         |  Simple demonstration
 :-------------------------:|:-------------------------:
-<img src="media/true_positive_1.png" alt="1st True Positive" width="640"/>  |  <img src="media/false_positive_1.png" alt="1st False Positive" width="640"/>
-<img src="media/true_positive_2.png" alt="2nd True Positive" width="640"/>  |  <img src="media/false_positive_2.png" alt="2nd False Positive" width="640"/>
-
->Note: The confidence score reflects to which extend the network is confident that those two images belong to the same class. High -> Similar; Low -> Dissimilar.
-
-
-#### **Performance Table**
-
-<img src="media/Model-Comparison-1.png" alt="Model-Comparison_table" width="640"/>
-
-> Note: The Siamese Network used resnet34 as backbone, whereas the Prototypical Network was using resnet18.
+![AI vs AI gif](media/agent.gif)  |  ![Player vs AI gif](media/player.gif)
 
 
 ### **Installation**
@@ -66,40 +63,32 @@ $ pip install -r requirements.txt
 
 ### **Project structure**
 
-#### **General**
+#### **OpenPose**
+- [/OpenPose/]()
+  - Folder that contains all the important files for the OpenPose implementation.
+- [/OpenPose/openpose_default/]()
+    - Contains the pretrained model files.
+- [/OpenPose/temp/]()
+    - Contains the onnx optimized model file.
+- [/OpenPose/utils.py]()
+    - Utility file that contains most custom function that extend the default OpenDR implementation, such as, head pose estimation and proximity measurement estimation.
+- [/OpenPose/demo.py]()
+    - OpenPose run file (with head pose estimation and proximity measurement estimation).
 
-- [/data/](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/tree/main/data)
-    - Training and testing datasets.
-
-#### **Siamese**
-
-- [/Siamese_torch/](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/tree/main/Siamese_torch)
-    - Necessary code to train and evaluate the
-Siamese Network for Few-Shot Learning.
-- [/Siamese_torch/core/siamese_network.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Siamese_torch/core/siamese_network.py)
-    - Network architecture.
-- [/Siamese_torch/core/config.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Siamese_torch/core/config.py)
-    - Configuration file.
-- [/Siamese_torch/core/utils.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Siamese_torch/core/utils.py)
-    - Loss functions, Confussion_Matrix, 3D-Scatter-Plot, etc.
-- [/Siamese_torch/output](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/tree/main/Siamese_torch/output)
-    - Model checkpoints, saved_models and prediction_images.
-- [/Siamese_torch/datasets.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Siamese_torch/datasets.py)
-    - Custom dataloader to process our datasets.
-- [/Siamese_torch/split_dataset.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Siamese_torch/split_dataset.py)
-    - Preprocessing and creation of few-shot learning datasets.
-- [/Siamese_torch/train_siamese_torch.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Siamese_torch/train_siamese_torch.py)
-    - Main code to run the training process.
-- [/Siamese_torch/test_network.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Siamese_torch/test_network.py)
-    - Main code to run the evaluation process.
-
-**Prototypical**
-- [/Prototypical_torch/](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Prototypical_torch/prototypical_torch/)
-    - Necessary code to train and evaluate the
-Prototypical Network for Few-Shot Learning.
-- [/Prototypical_torch/prototypical_model.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Prototypical_torch/prototypical_torch/prototypical_model.py)
-    - Network architecture.
-- [/Prototypical_torch/resnet_train.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Prototypical_torch/prototypical_torch/resnet_train.py)
-    - Main code to run the training process.
-- [/Prototypical_torch/datasets.py](https://github.com/davelbit/DTU-Object-Detection-via-Few-Shot-Learning/blob/main/Prototypical_torch/prototypical_torch/datasets.py)
-    - Custom dataloader to process our datasets.
+#### **ST-GCN**
+- [/ST-GCN/]()
+  - Folder that contains all the important files for the end-to-end solution.
+- [/ST-GCN/data/]()
+  - Training and validation files for the ST-GCN model
+- [/ST-GCN/pretrained_models/]()
+    - Contains the pretrained model files.
+- [/ST-GCN/temp/]()
+    - Contains the onnx optimized model file.
+- [/ST-GCN/utils.py]()
+    - Utility file that contains most custom function that extend the default OpenDR implementation, such as, head pose estimation and proximity measurement estimation.
+- [/ST-GCN/run.py]()
+    - Run file of the entire end-to-end solution
+- [/ST-GCN/train.py]()
+    - Training script for the ST-GCN model
+- [/ST-GCN/skeleton_extraction_custom.py]()
+    - Script, that extracts the skeleton data from video files, to form the training and validation sets.

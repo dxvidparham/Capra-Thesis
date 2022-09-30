@@ -15,18 +15,13 @@
 
 import contextlib
 import numpy as np
-import os
 import torch
 import cv2
 import time
 import pandas as pd
 from typing import Dict
-import wandb
-from ptflops import get_model_complexity_info
-import sys
-from scipy.spatial.distance import pdist, squareform
-import networkx as nx
-from utils import gaze_direction
+from utils import gaze_direction, get_text_size, print_distances
+import traceback
 
 # opendr imports
 from opendr.perception.pose_estimation import LightweightOpenPoseLearner
@@ -55,12 +50,6 @@ class VideoReader(object):
         if not was_read:
             raise StopIteration
         return img
-
-
-def get_text_size(id):
-    return (
-        cv2.getTextSize(f"Person ID: {id}", cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0][0] // 2
-    )
 
 
 def tile(a, dim, n_tile):
@@ -108,13 +97,12 @@ def pose2numpy(args, num_current_frames, poses_list):
 
 
 def select_2_poses(poses):
-    energy = []
+    energy = {}
     for i in range(len(poses)):
         s = poses[i].data[:, 0].std() + poses[i].data[:, 1].std()
-        energy.append(s)
-    energy = np.array(energy)
-    index = energy.argsort()[::-1][:2]
-    return [poses[index]]
+        energy[s] = i
+    temp = sorted(energy.keys())
+    return [poses[energy.get(temp[-1])], poses[energy.get(temp[-2])]]
 
 
 CAPRA_CLASSES = pd.read_csv(
@@ -142,24 +130,6 @@ def draw_preds(frame, preds: Dict):
             (0, 255, 255),
             2,
         )
-
-
-# def draw_direction(frame, eyes):
-#     eyes = set(eyes)
-#     if len(eyes) > 1:
-#         text = "FRONT"
-#     else:
-#         text = "BACK"
-
-#     cv2.putText(
-#         frame,
-#         text,
-#         (10, 200),
-#         cv2.FONT_HERSHEY_SIMPLEX,
-#         1,
-#         (0, 255, 255),
-#         2,
-#     )
 
 
 if __name__ == "__main__":
@@ -210,12 +180,6 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--disable_wandb",
-        help="Control wandb tracking",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
         "--hide_FPS",
         help="Puts the FPS on the images",
         default=False,
@@ -228,7 +192,7 @@ if __name__ == "__main__":
     hide_FPS = args.hide_FPS
     onnx, device, accelerate = args.onnx, args.device, args.accelerate
     if accelerate:
-        stride = True
+        stride = False
         stages = 0
         half_precision = True
     else:
@@ -287,48 +251,21 @@ if __name__ == "__main__":
         pose_estimator.optimize()
         action_classifier.optimize()
 
-    # torch.backends.quantized.engine = "qnnpack"
-    # pose_estimator.model = torch.quantization.quantize_dynamic(
-    #     pose_estimator.model, {torch.nn.Conv2d}, dtype=torch.qint8
-    # )
-    # macs, params = get_model_complexity_info(
-    #     pose_estimator.model,
-    #     (3, 224, 224),
-    #     as_strings=True,
-    #     print_per_layer_stat=True,
-    #     verbose=True,
-    # )
-    # print("{:<30}  {:<8}".format("Computational complexity: ", macs))
-    # print("{:<30}  {:<8}".format("Number of parameters: ", params))
-    # sys.exit(-1)
     image_provider = VideoReader(args.video)  # loading a video or get the camera id 0
     if args.save:
-        # Obtain frame size information using get() method
+        # The correct width and height of the frames has to be used to save the file
         frame_width = 640
-        frame_height = 480
+        frame_height = 360
         frame_size = (frame_width, frame_height)
         fps = 20
 
         # Initialize video writer object
         output = cv2.VideoWriter(
-            "output_video_from_file.avi",
+            "output_video_from_file.mp4",
             cv2.VideoWriter_fourcc("M", "J", "P", "G"),
             fps,
             frame_size,
         )
-
-    # Control wandb initialization
-    disable_wandb = args.disable_wandb
-    if disable_wandb:
-        wandb.init(mode="disabled")
-    else:
-        wandb.init(
-            project="Thesis",
-            entity="davidlbit",
-            tags=["OpenPose", device, "single", "Action recognition"],
-        )
-        wandb.watch(pose_estimator.model, log_freq=100)
-        wandb.watch(action_classifier.model, log_freq=100)
 
     try:
         counter, avg_fps = 0, 0
@@ -337,7 +274,6 @@ if __name__ == "__main__":
         f_ind = 0
         for img in image_provider:
             if f_ind % window == 0:
-                # eyes = []
                 start_time = time.perf_counter()
                 poses = pose_estimator.infer(img)
                 centroid_dict = {}
@@ -346,10 +282,6 @@ if __name__ == "__main__":
                     mask = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
                     mask[:] = (0, 0, 0)
                     img = mask
-
-                # eyes.extend(poses[0]["l_eye"])
-                # eyes.extend(poses[0]["r_eye"])
-                # draw_direction(img, eyes)
 
                 for pose in poses:
                     head_position_x = pose["nose"][0]
@@ -373,35 +305,19 @@ if __name__ == "__main__":
                     y = (y1 + y2 + y3) // 3
 
                     centroid_dict[str(pose.id)] = (x, y)
-                    try:
+                    with contextlib.suppress(Exception):
                         gaze_direction(img, pose)
-                    except Exception as e:
-                        # print(e)
-                        pass
                     draw(img, pose)
 
                 # Measure the distance between subjects
                 if len(centroid_dict) > 1:
-                    centroid_mat = np.array(list(centroid_dict.values()))
-                    proximity_measurement = squareform(pdist(centroid_mat))
-                    # print(proximity_measurement)
-                    G = nx.from_numpy_matrix(proximity_measurement)
-
-                    for edge in list(G.edges()):
-                        distance = G.get_edge_data(*edge).get("weight")
-                        distance = distance * 0.0264583333
-                        print(
-                            f"Distance between Person {edge[0]} and Person {edge[1]} is {distance:.2f} cm"
-                        )
-                    else:
-                        print("")
+                    print_distances(centroid_dict)
 
                 if len(poses) > 0:
                     if len(poses) > 2:
                         # select two poses with highest energy
                         poses = select_2_poses(poses)
                     counter += 1
-                    print(counter)
                     poses_list.append(poses)
 
                 if counter > args.num_frames:
@@ -409,19 +325,17 @@ if __name__ == "__main__":
                     counter = args.num_frames
                 if counter > 0:
                     skeleton_seq = pose2numpy(args, counter, poses_list)
-
                     prediction = action_classifier.infer(skeleton_seq)
                     category_labels = preds2label(prediction.confidence)
-                    print(category_labels)
-                    draw_preds(img, category_labels)
+                    # draw_preds(img, category_labels)
 
                 # Calculate a running average on FPS
                 end_time = time.perf_counter()
                 fps = 1.0 / (end_time - start_time)
                 avg_fps = 0.8 * fps + 0.2 * fps
-                wandb.log({"fps": avg_fps})
+
                 # Wait a few frames for FPS to stabilize
-                if counter > 5 and not hide_FPS:
+                if counter > 10 and not hide_FPS:
                     img = cv2.putText(
                         img,
                         "FPS: %.2f" % (avg_fps,),
@@ -441,8 +355,8 @@ if __name__ == "__main__":
             if key == ord("q"):
                 break
     except Exception as e:
+        traceback.print_exc()
         print(e)
 
-    wandb.finish()
     print("Average inference fps: ", avg_fps)
     cv2.destroyAllWindows()

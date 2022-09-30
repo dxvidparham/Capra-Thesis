@@ -17,10 +17,10 @@ import argparse
 from typing import Dict
 
 import cv2
+import os
 import numpy as np
 import pandas as pd
 import torch
-import wandb
 from opendr.perception.skeleton_based_action_recognition import (
     ProgressiveSpatioTemporalGCNLearner,
     SpatioTemporalGCNLearner,
@@ -47,8 +47,8 @@ def main(args):
         )
     else:
         model = SpatioTemporalGCNLearner(
-            batch_size=3,
-            checkpoint_after_iter=5,
+            batch_size=1,
+            checkpoint_after_iter=100,
             temp_path="temp/stgcn",
             num_workers=16,
             epochs=50,
@@ -61,18 +61,9 @@ def main(args):
             in_channels=2,
         )
 
-    # Control wandb initialization
-    if args.disable_wandb:
-        wandb.init(mode="disabled")
-    else:
-        wandb.init(
-            project="Thesis",
-            entity="davidlbit",
-            tags=["OpenPose"],
-        )
-        wandb.watch(model, log_freq=100)
+    BASE_DIR = os.getcwd()
+    PATH = f"{BASE_DIR}/data/2D_skeletons/xview"
 
-    PATH = "./data/2D_skeletons/xview"
     train_dataset = ExternalDataset(path=PATH, dataset_type="KINETICS")
     val_dataset = ExternalDataset(path=PATH, dataset_type="KINETICS")
 
@@ -96,12 +87,5 @@ if __name__ == "__main__":
     parser.add_argument(
         "--method", type=str, default="stgcn", help="action detection method"
     )
-    parser.add_argument(
-        "--disable_wandb",
-        help="Control wandb tracking",
-        default=False,
-        action="store_true",
-    )
-
     args = parser.parse_args()
     main(args)
