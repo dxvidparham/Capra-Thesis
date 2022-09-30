@@ -28,7 +28,7 @@ As illustrated in the figure below.
 
 
 ### **Methods explained**
-In the following short explanations are given, about the workings of the indidvidual components of the end-to-end solution. Please refer to file [thesis.pdf]() for a full explanation.
+In the following short explanations are given, about the workings of the indidvidual components of the end-to-end solution. Please refer to file [thesis.pdf](https://github.com/davelbit/Capra-Thesis/blob/main/media/thesis.pdf) for a full explanation.
 
 #### **Human Pose Estimation**
 The human posture estimation model uses a CNN as a feature extractor and then computes headmaps of the body joints and their partial affinity fields to find out which keypoints belong to the same skeleton. Then, a greedy algorithm is used to assign all keypoints to the "correct" skeletet.
