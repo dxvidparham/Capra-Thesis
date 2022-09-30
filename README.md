@@ -28,7 +28,7 @@ As illustrated in the figure below.
 
 
 ### **Methods explained**
-In the following short explanations are given, about the workings of the indidvidual components of the end-to-end solution. Please refer to file xxx for a full explanation.
+In the following short explanations are given, about the workings of the indidvidual components of the end-to-end solution. Please refer to file [thesis.pdf]() for a full explanation.
 
 #### **Human Pose Estimation**
 The human posture estimation model uses a CNN as a feature extractor and then computes headmaps of the body joints and their partial affinity fields to find out which keypoints belong to the same skeleton. Then, a greedy algorithm is used to assign all keypoints to the "correct" skeletet.
@@ -49,6 +49,13 @@ Full scale demonstration         |  Simple demonstration
 :-------------------------:|:-------------------------:
 ![Demonstration: 1](media/demo.gif)  |  ![Demonstration: 2](media/demo1.gif)
 
+#### **Action recognition output**
+Since action detection should be performed for each person in the frame, it was decided to output the actions of the corresponding persons in the console. It was also to prevent the visual output (as shown in the demonstration videos above) from becoming too cluttered if more text filled the frame.
+
+> Note: The robot does not require visual feedback once it is deployed. The videos are only there to facilitate understanding.
+
+<img src="media/Flow_data_diagram1.png" alt="Confusion_Matrix_Siamese" width="640"/>
+
 
 ### **Installation**
 
@@ -64,31 +71,33 @@ $ pip install -r requirements.txt
 ### **Project structure**
 
 #### **OpenPose**
-- [/OpenPose/]()
+- [/OpenPose/](https://github.com/davelbit/Capra-Thesis/tree/main/OpenPose)
   - Folder that contains all the important files for the OpenPose implementation.
-- [/OpenPose/openpose_default/]()
+- [/OpenPose/openpose_default/](https://github.com/davelbit/Capra-Thesis/tree/main/OpenPose/openpose_default)
     - Contains the pretrained model files.
-- [/OpenPose/temp/]()
+- [/OpenPose/temp/](https://github.com/davelbit/Capra-Thesis/tree/main/OpenPose/temp)
     - Contains the onnx optimized model file.
-- [/OpenPose/utils.py]()
+- [/OpenPose/utils.py](https://github.com/davelbit/Capra-Thesis/tree/main/OpenPose/utils.py)
     - Utility file that contains most custom function that extend the default OpenDR implementation, such as, head pose estimation and proximity measurement estimation.
-- [/OpenPose/demo.py]()
+- [/OpenPose/demo.py](https://github.com/davelbit/Capra-Thesis/tree/main/OpenPose/demo.py)
     - OpenPose run file (with head pose estimation and proximity measurement estimation).
 
 #### **ST-GCN**
-- [/ST-GCN/]()
+- [/ST-GCN/](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN)
   - Folder that contains all the important files for the end-to-end solution.
-- [/ST-GCN/data/]()
+- [/ST-GCN/data/](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN/data)
   - Training and validation files for the ST-GCN model
-- [/ST-GCN/pretrained_models/]()
-    - Contains the pretrained model files.
-- [/ST-GCN/temp/]()
+- [/ST-GCN/openpose_default/](https://github.com/davelbit/Capra-Thesis/tree/main/OpenPose/openpose_default)
+  - Contains the pretrained model files for lightweight OpenPose.
+- [/ST-GCN/pretrained_models/](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN/pretrained_models)
+    - Contains the pretrained model files for ST-GCN.
+- [/ST-GCN/temp/](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN/temp)
     - Contains the onnx optimized model file.
-- [/ST-GCN/utils.py]()
+- [/ST-GCN/utils.py](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN/utils.py)
     - Utility file that contains most custom function that extend the default OpenDR implementation, such as, head pose estimation and proximity measurement estimation.
-- [/ST-GCN/run.py]()
+- [/ST-GCN/run.py](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN/run.py)
     - Run file of the entire end-to-end solution
-- [/ST-GCN/train.py]()
+- [/ST-GCN/train.py](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN/train.py)
     - Training script for the ST-GCN model
-- [/ST-GCN/skeleton_extraction_custom.py]()
+- [/ST-GCN/skeleton_extraction_custom.py](https://github.com/davelbit/Capra-Thesis/tree/main/ST-GCN/skeleton_extraction_custom.py)
     - Script, that extracts the skeleton data from video files, to form the training and validation sets.
